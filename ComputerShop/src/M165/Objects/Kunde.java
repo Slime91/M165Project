@@ -1,12 +1,10 @@
 package M165.Objects;
-
 import M165.CShop_Repository;
 import org.bson.types.ObjectId;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 
 public class Kunde {
     private ObjectId id;
@@ -103,8 +101,14 @@ public class Kunde {
         return id;
     }
 
+    public ObjectId getId() { return id; };
     public void setId(ObjectId id) {
         this.id = id;
+    }
+
+    // Add a Bestellung to the Kunde
+    public void addBestellung(Bestellung bestellung) {
+        this.Bestellungen.add(bestellung);
     }
 
     // Function to check if a Kunde ID already exists in the database
@@ -124,6 +128,18 @@ public class Kunde {
 
     public void setAdresse(Adresse adresse) {
         this.adresse = adresse;
+    }
+    public void removeBestellnummer(int bestellnummerToRemove) {
+        // Iterate through the list of Bestellungen to find and remove the specified Bestellnummer
+        List<Bestellung> updatedBestellungen = new ArrayList<>();
+        for (Bestellung existingBestellung : Bestellungen) {
+            int bestellnummer = Integer.parseInt(String.valueOf(existingBestellung.getBestellnummer()));
+            if (bestellnummer != bestellnummerToRemove) {
+                updatedBestellungen.add(existingBestellung);
+            }
+        }
+        // Update the list of Bestellungen
+        this.Bestellungen = updatedBestellungen;
     }
 }
 

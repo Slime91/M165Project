@@ -1,27 +1,39 @@
 package M165.Objects;
+import org.bson.types.ObjectId;
+
 
 public class Bestellposition {
-    private Double Einzelpreis;
-    private Integer Anzahl;
+    private ObjectId articleId;
+    private Integer anzahl;
+    private Double einzelpreis;
 
-    public Bestellposition(Double Einzelpreis, Integer Anzahl) {
-        this.Einzelpreis = Einzelpreis;
-        this.Anzahl = Anzahl;
+    public Bestellposition(ObjectId articleId, Integer anzahl, Double einzelpreis) {
+        this.articleId = articleId;
+        this.anzahl = anzahl;
+        this.einzelpreis = einzelpreis;
     }
 
-    public Double getEinzelpreis() {
-        return Einzelpreis;
+    public ObjectId getArticleId() {
+        return articleId;
     }
 
-    public void setEinzelpreis(Double einzelpreis) {
-        Einzelpreis = einzelpreis;
+    public void setArticleId(ObjectId articleId) {
+        this.articleId = articleId;
     }
 
     public Integer getAnzahl() {
-        return Anzahl;
+        return anzahl;
     }
 
     public void setAnzahl(Integer anzahl) {
-        Anzahl = anzahl;
+        this.anzahl = anzahl;
+    }
+
+    public Double getEinzelpreis() {
+        return einzelpreis;
+    }
+
+    public void setEinzelpreis(Double einzelpreis) {
+        this.einzelpreis = einzelpreis;
     }
 }

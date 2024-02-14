@@ -1,78 +1,128 @@
 package M165.Objects;
 
-import java.util.ArrayList;
+import M165.CShop_Repository;
+import org.bson.types.ObjectId;
+
+import org.bson.types.ObjectId;
 import java.util.List;
 
 public class Computer {
-    private String Hersteller;
-    private String Modell;
-    private Integer Arbeitspeicher;
-    private String CPU;
-    private Integer Massenspeicher;
-    private String Typ;
-    private List<M165.Objects.Schnittstellentyp> Schnittstellentyp;
+    private ObjectId computerId;
+    private String hersteller;
+    private String modell;
+    private Integer arbeitspeicher;
+    private String cpu;
+    private Integer massenspeicher;
+    private String typ;
+    private List<Schnittstellentyp> schnittstellen;
+    private Double Einzelpreis;
 
-
-    public Computer(String Hersteller, String Modell, Integer Arbeitspeicher, String CPU, Integer Massenspeicher, String Typ) {
-        this.Hersteller = Hersteller;
-        this.Modell = Modell;
-        this.Arbeitspeicher = Arbeitspeicher;
-        this.CPU = CPU;
-        this.Massenspeicher = Massenspeicher;
-        this.Typ = Typ;
-        this.Schnittstellentyp = new ArrayList<>();
+    public Computer(ObjectId computerId, String hersteller, String modell, Integer arbeitspeicher, String cpu, Integer massenspeicher, String typ, List<Schnittstellentyp> schnittstellen, Double Einzelpreis) {
+        this.computerId = computerId;
+        this.hersteller = hersteller;
+        this.modell = modell;
+        this.arbeitspeicher = arbeitspeicher;
+        this.cpu = cpu;
+        this.massenspeicher = massenspeicher;
+        this.typ = typ;
+        this.schnittstellen = schnittstellen;
+        this.Einzelpreis = Einzelpreis;
     }
 
-    public List<M165.Objects.Schnittstellentyp> getSchnittstellentyp() {
-        return Schnittstellentyp;
+    // Getters and setters...
+
+
+    public Double getEinzelpreis() {
+        return Einzelpreis;
+    }
+
+    public void setEinzelpreis(Double einzelpreis) {
+        Einzelpreis = einzelpreis;
+    }
+
+    public ObjectId getId(CShop_Repository repository) {
+        return computerId;
+    }
+
+    public void setId(ObjectId id) {
+        this.computerId = id;
+    }
+
+    public List<Schnittstellentyp> getSchnittstellen() {
+        return schnittstellen;
+    }
+
+    public void setSchnittstellen(List<Schnittstellentyp> schnittstellen) {
+        this.schnittstellen = schnittstellen;
     }
 
     public String getHersteller() {
-        return Hersteller;
+        return hersteller;
     }
 
     public void setHersteller(String hersteller) {
-        Hersteller = hersteller;
+        this.hersteller = hersteller;
     }
 
     public String getModell() {
-        return Modell;
+        return modell;
     }
 
     public void setModell(String modell) {
-        Modell = modell;
+        this.modell = modell;
     }
 
     public Integer getArbeitspeicher() {
-        return Arbeitspeicher;
+        return arbeitspeicher;
     }
 
     public void setArbeitspeicher(Integer arbeitspeicher) {
-        Arbeitspeicher = arbeitspeicher;
+        this.arbeitspeicher = arbeitspeicher;
     }
 
     public String getCPU() {
-        return CPU;
+        return cpu;
     }
 
-    public void setCPU(String CPU) {
-        this.CPU = CPU;
+    public void setCPU(String cpu) {
+        this.cpu = cpu;
     }
 
     public Integer getMassenspeicher() {
-        return Massenspeicher;
+        return massenspeicher;
     }
 
     public void setMassenspeicher(Integer massenspeicher) {
-        Massenspeicher = massenspeicher;
+        this.massenspeicher = massenspeicher;
     }
 
     public String getTyp() {
-        return Typ;
+        return typ;
     }
 
     public void setTyp(String typ) {
-        Typ = typ;
+        this.typ = typ;
+    }
+
+    public ObjectId getComputerId() {
+        return computerId;
+    }
+
+    public void setComputerId(ObjectId computerId) {
+        this.computerId = computerId;
+    }
+
+    // Function to check if a Computer ID already exists in the database
+    static boolean isComputerIdExists(CShop_Repository repository, ObjectId computerId) {
+        List<Computer> computers = repository.readAllComputers();
+        for (Computer computer : computers) {
+            if (computer.getId(repository).equals(computerId)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }
+
+

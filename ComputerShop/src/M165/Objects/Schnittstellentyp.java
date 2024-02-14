@@ -1,9 +1,36 @@
 package M165.Objects;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Schnittstellentyp {
-    public static final String USB_C = "USB-C";
-    public static final String HDMI = "HDMI";
-    public static final String LAN = "LAN";
+    private String name;
+    private Integer integer;
+
+    public Integer getInteger() {
+        return integer;
+    }
+
+    public void setInteger(Integer integer) {
+        this.integer = integer;
+    }
+
+    public Schnittstellentyp(String name, Integer integer) {
+        this.name = name;
+        this.integer = integer;
+    }
+
+    public Schnittstellentyp(String schnittstellentyp) {
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String updatedName) {
+        this.name = name;
+    }
+
 
 }
 

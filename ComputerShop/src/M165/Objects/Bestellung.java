@@ -1,22 +1,33 @@
 package M165.Objects;
 
+import org.bson.types.ObjectId;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 public class Bestellung {
     private Integer Bestellnummer;
-    private Kunde kunde;
     private Date Bestelldatum;
     private double Total;
-    private List<Computer> computerList;
+    private List<Bestellposition> bestellpositionList;
+    private ObjectId kundeId; // New attribute to store Kunde ID
 
-    public Bestellung(Integer Bestellnummer, Kunde kunde, Date Bestelldatum, double Total) {
+    public Bestellung(Integer Bestellnummer, ObjectId kundeId, Date Bestelldatum, double Total, List<Bestellposition> bestellpositionList) {
         this.Bestellnummer = Bestellnummer;
+        this.kundeId = kundeId;
         this.Bestelldatum = Bestelldatum;
-        this.kunde = kunde;
         this.Total = Total;
-        this.computerList = new ArrayList<>();
+        this.bestellpositionList = new ArrayList<>();
+    }
+
+    // Getter and setter for kundeId
+    public ObjectId getKundeId() {
+        return kundeId;
+    }
+
+    public void setKundeId(ObjectId kundeId) {
+        this.kundeId = kundeId;
     }
 
     public Integer getBestellnummer() {
@@ -25,14 +36,6 @@ public class Bestellung {
 
     public void setBestellnummer(Integer bestellnummer) {
         Bestellnummer = bestellnummer;
-    }
-
-    public Kunde getKunde() {
-        return kunde;
-    }
-
-    public void setKunde(Kunde kunde) {
-        this.kunde = kunde;
     }
 
     public Date getBestelldatum() {
@@ -51,11 +54,19 @@ public class Bestellung {
         Total = total;
     }
 
-    public List<Computer> getComputerList() {
-        return computerList;
+    public List<Bestellposition> getBestellpositionList() {
+        return bestellpositionList;
     }
 
-    public void setComputerList(List<Computer> computerList) {
-        this.computerList = computerList;
+    public void setBestellpositionList(List<Bestellposition> bestellpositionList) {
+        this.bestellpositionList = bestellpositionList;
+    }
+    public String getBestellnummerAsString() {
+        return String.valueOf(Bestellnummer);
+    }
+
+    public Integer getBestellnummerAsInt() {
+        return Bestellnummer;
     }
 }
+

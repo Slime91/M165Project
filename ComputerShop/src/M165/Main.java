@@ -1,11 +1,16 @@
 package M165;
 
+import M165.Functions.BestellungFunctions;
+import M165.Functions.ComputerFunctions;
 import M165.Functions.KundeFunctions;
+import M165.Objects.Bestellung;
+import M165.Objects.Computer;
 import M165.Objects.Kunde;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoDatabase;
 
 
+import java.lang.reflect.Method;
 import java.util.Scanner;
 
 public class Main {
@@ -27,10 +32,9 @@ public class Main {
             System.out.println("Select an option:");
             System.out.println("1. Manage Kunden");
             System.out.println("2. Manage Computers");
-            System.out.println("3. Manage Adressen");
-            System.out.println("4. Manage Bestellungen");
-            System.out.println("5. Manage Bestellpositionen");
-            System.out.println("6. Exit");
+            System.out.println("3. Manage Bestellungen");
+            System.out.println("4. List all Collections");
+            System.out.println("5. Exit");
 
             int choice = scanner.nextInt();
             scanner.nextLine(); // Consume newline
@@ -46,7 +50,7 @@ public class Main {
                     manageBestellungen(repository, scanner);
                     break;
                 case 4:
-                    manageBestellpositionen(repository, scanner);
+                    repository.listAllCollections();
                     break;
                 case 5:
                     exit = true;
@@ -69,7 +73,7 @@ public class Main {
             System.out.println("1. Add Kunde");
             System.out.println("2. Update Kunde");
             System.out.println("3. Delete Kunde");
-            System.out.println("4. Read Kunde");
+            System.out.println("4. Search Kunde");
             System.out.println("5. ReadAll Kunde");
             System.out.println("6. Save");
             System.out.println("7. Main Menu");
@@ -82,23 +86,25 @@ public class Main {
                     // Add Kunde
                     Kunde newKunde = KundeFunctions.createKundeFromUserInput(scanner, repository);
                     repository.addKunde(newKunde);
-                    System.out.println("Kunde added successfully.");
                     break;
                 case 2:
                     // Update Kunde
                     KundeFunctions.updateKunde(repository, scanner);
                     break;
                 case 3:
-
+                    KundeFunctions.KundeDelete(repository, scanner);
                     break;
                 case 4:
+                    KundeFunctions.searchKunde(repository, scanner);
                     break;
                 case 5:
                     KundeFunctions.readAllKundeData(repository);
                     break;
                 case 6:
+                    CShop_Repository.save();
                     break;
                 case 7:
+                    exitKunde = true;
                     break;
             }
         }
@@ -107,35 +113,96 @@ public class Main {
 
 
     private static void manageComputers(CShop_Repository repository, Scanner scanner) {
-        // Implement CRUD operations for Computers
-        // Example:
-        // repository.addComputer(new Computer(...));
-        // repository.updateComputer(computerId, updatedComputer);
-        // repository.deleteComputer(computerId);
-        // repository.readComputer(computerId);
-        // repository.readAllComputers();
+        boolean exitComputer = false;
+        while (!exitComputer) {
+            System.out.println("Select an option:");
+            System.out.println("1. Add Computer");
+            System.out.println("2. Update Computer");
+            System.out.println("3. Delete Computer");
+            System.out.println("4. Search Computer");
+            System.out.println("5. ReadAll Computer");
+            System.out.println("6. Save");
+            System.out.println("7. Main Menu");
+
+            int choice = scanner.nextInt();
+            scanner.nextLine(); // Consume newline
+
+            switch (choice) {
+                case 1:
+                    // Add Computer
+                    Computer newComputer = ComputerFunctions.createComputerFromUserInput(scanner, repository);
+                    repository.addComputer(newComputer);
+                    break;
+                case 2:
+                    // Update Computer
+                    ComputerFunctions.updateComputer(repository, scanner);
+                    break;
+                case 3:
+                    ComputerFunctions.computerDelete(repository, scanner);
+                    break;
+                case 4:
+                    ComputerFunctions.searchComputer(repository, scanner);
+                    break;
+                case 5:
+                    ComputerFunctions.readAllComputerData(repository);
+                    break;
+                case 6:
+                    CShop_Repository.save();
+                    break;
+                case 7:
+                    exitComputer = true;
+                    break;
+            }
+        }
     }
 
 
 
     private static void manageBestellungen(CShop_Repository repository, Scanner scanner) {
-        // Implement CRUD operations for Bestellungen
-        // Example:
-        // repository.addBestellung(new Bestellung(...));
-        // repository.updateBestellung(bestellungId, updatedBestellung);
-        // repository.deleteBestellung(bestellungId);
-        // repository.readBestellung(bestellungId);
-        // repository.readAllBestellungen();
-    }
+        boolean exitBestellung = false;
+        while (!exitBestellung) {
+            System.out.println("Select an option:");
+            System.out.println("1. Add Bestellung");
+            System.out.println("2. Update Bestellung");
+            System.out.println("3. Delete Bestellung");
+            System.out.println("4. Search Bestellung");
+            System.out.println("5. ReadAll Bestellung");
+            System.out.println("6. Display Bestellposition from a Bestellung");
+            System.out.println("7. Save");
+            System.out.println("8. Main Menu");
 
-    private static void manageBestellpositionen(CShop_Repository repository, Scanner scanner) {
-        // Implement CRUD operations for Bestellpositionen
-        // Example:
-        // repository.addBestellposition(new Bestellposition(...));
-        // repository.updateBestellposition(bestellpositionId, updatedBestellposition);
-        // repository.deleteBestellposition(bestellpositionId);
-        // repository.readBestellposition(bestellpositionId);
-        // repository.readAllBestellpositionen();
+            int choice = scanner.nextInt();
+            scanner.nextLine(); // Consume newline
+
+            switch (choice) {
+                case 1:
+                    // Add Bestellung
+                    Bestellung newBestellung = BestellungFunctions.createBestellungFromUserInput(scanner, repository);
+                    break;
+                case 2:
+                    // Update Bestellung
+                    BestellungFunctions.updateBestellung(repository, scanner);
+                    break;
+                case 3:
+                    BestellungFunctions.deleteBestellung(repository, scanner);
+                    break;
+                case 4:
+                    BestellungFunctions.searchBestellung(repository, scanner);
+                    break;
+                case 5:
+                    BestellungFunctions.readAllBestellung(repository);
+                    break;
+                case 6:
+                    BestellungFunctions.viewBestellposition(repository, scanner);
+                    break;
+                case 7:
+                    CShop_Repository.save();
+                    break;
+                case 8:
+                    exitBestellung = true;
+                    break;
+            }
+        }
     }
 
 }

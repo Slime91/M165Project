@@ -49,6 +49,7 @@ public class KundeFunctions {
 
         // Create a new Kunde object with the Adresse object
         Kunde kunde = new Kunde(kundeId, geschlecht, nachname, vorname, telefon, email, sprache, geburtstag, adresse);
+        System.out.println("Kunde added successfully.");
         return kunde;
     }
 
@@ -61,7 +62,9 @@ public class KundeFunctions {
         // Display the list of Kunden with their numbered IDs to the user
         System.out.println("Existing Kunden:");
         for (int i = 0; i < kunden.size(); i++) {
-            System.out.println((i + 1) + ". " + kunden.get(i).getId(repository) + ": " + kunden.get(i).getNachname() + ", " + kunden.get(i).getVorname());
+            Kunde currentKunde = kunden.get(i);
+            ObjectId kundeId = currentKunde.getId(repository);
+            System.out.println((i + 1) + ". " + kundeId + ": " + currentKunde.getNachname() + ", " + currentKunde.getVorname());
         }
 
         // Prompt the user to select the Kunde they want to update
@@ -110,42 +113,39 @@ public class KundeFunctions {
             System.out.println("Invalid choice. Please enter a number within the range.");
         }
     }
-        // Function to display all Kunden and delete the one with the specified ID
-        static void displayAndDeleteKunde(CShop_Repository repository, Scanner scanner) {
-            // Retrieve all existing Kunden
-            List<Kunde> kunden = repository.readAllKunden();
 
-            // Display the list of Kunden with their IDs to the user
-            System.out.println("Existing Kunden:");
-            for (Kunde kunde : kunden) {
-                System.out.println(kunde.getId(repository) + ": " + kunde.getNachname() + ", " + kunde.getVorname());
-            }
+    public static void KundeDelete(CShop_Repository repository, Scanner scanner) {
+        // Retrieve all existing Kunden
+        List<Kunde> kunden = repository.readAllKunden();
 
-            // Prompt the user to input the ID of the Kunde they want to delete
-            System.out.println("Enter the ID of the Kunde you want to delete:");
-            String idString = scanner.nextLine();
-            ObjectId id = new ObjectId(idString);
-
-            // Check if the provided ID exists
-            boolean idExists = false;
-            for (Kunde kunde : kunden) {
-                if (kunde.getId(repository).equals(id)) {
-                    idExists = true;
-                    break;
-                }
-            }
-
-            if (idExists) {
-                // Delete the Kunde with the specified ID
-                repository.deleteKunde(idString);
-                System.out.println("Kunde with ID " + idString + " deleted successfully.");
-            } else {
-                System.out.println("Kunde with the provided ID does not exist.");
-            }
+        // Display the list of Kunden with their numbered IDs to the user
+        System.out.println("Existing Kunden:");
+        for (int i = 0; i < kunden.size(); i++) {
+            Kunde kunde = kunden.get(i);
+            System.out.println((i + 1) + ". " + kunde.getId(repository) + ": " + kunde.getNachname() + ", " + kunde.getVorname());
         }
 
+        // Prompt the user to input the ID of the Kunde they want to delete
+        System.out.println("Enter the number of the Kunde you want to delete:");
+        int choice = scanner.nextInt();
+        scanner.nextLine(); // Consume newline
 
-        // Function to read all data from the "kunde" collection
+        // Ensure the user entered a valid choice
+        if (choice >= 1 && choice <= kunden.size()) {
+            // Retrieve the selected Kunde
+            Kunde selectedKunde = kunden.get(choice - 1);
+
+            // Delete the Kunde with the specified ID
+            repository.deleteKunde(selectedKunde.getId(repository).toString());
+            System.out.println("Kunde with ID " + selectedKunde.getId(repository) + " deleted successfully.");
+        } else {
+            System.out.println("Invalid choice. Please enter a number within the range.");
+        }
+    }
+
+
+
+    // Function to read all data from the "kunde" collection
         public static void readAllKundeData(CShop_Repository repository) {
             // Obtain the "kunde" collection
             MongoCollection<Document> kundeCollection = repository.getKundeCollection();
@@ -161,6 +161,27 @@ public class KundeFunctions {
                 System.out.println(kundeDoc.toJson());
             }
         }
+    public static void searchKunde(CShop_Repository repository, Scanner scanner) {
+        // Prompt the user to enter the column and content to search
+        System.out.println("Enter the column you want to search (e.g., Nachname):");
+        String column = scanner.nextLine();
+        System.out.println("Enter the content to search:");
+        String content = scanner.nextLine();
 
+        // Retrieve Kunden matching the search criteria
+        List<Kunde> kunden = repository.readKunde(column, content);
+
+        // Display the search results
+        if (!kunden.isEmpty()) {
+            System.out.println("Search results:");
+            for (int i = 0; i < kunden.size(); i++) {
+                Kunde currentKunde = kunden.get(i);
+                ObjectId kundeId = currentKunde.getId(repository);
+                System.out.println((i + 1) + ". " + kundeId + ": " + currentKunde.getNachname() + ", " + currentKunde.getVorname());
+            }
+        } else {
+            System.out.println("No Kunden found matching the search criteria.");
+        }
+    }
 }
 
