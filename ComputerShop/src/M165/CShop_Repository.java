@@ -343,6 +343,7 @@ public class CShop_Repository {
 
     // Methods for managing Bestellungen
 
+    // Add Bestellung
     public void addBestellung(Bestellung bestellung) {
         // Create a document for Bestellung
         Document bestellungDoc = new Document("Bestellnummer", bestellung.getBestellnummerAsInt())
@@ -378,24 +379,6 @@ public class CShop_Repository {
     // Delete Bestellung
     public void deleteBestellung(String bestellungId) {
         bestellungCollection.deleteOne(new Document("_id", bestellungId));
-    }
-
-    // Read Bestellung
-    public Bestellung readBestellung(String bestellungId, CShop_Repository repository) {
-        Document bestellungDoc = bestellungCollection.find(new Document("_id", new ObjectId(bestellungId))).first();
-        if (bestellungDoc != null) {
-            ObjectId kundeId = bestellungDoc.getObjectId("Kunde");
-            Kunde kunde = repository.readKunde(String.valueOf(kundeId)); // Assuming you have a method to read Kunde by ID
-            Integer bestellungNum = bestellungDoc.getInteger("Bestellnummer");
-            // Handle retrieving BestellpositionList here based on your implementation
-
-            return new Bestellung( bestellungNum,
-                    kundeId,
-                    bestellungDoc.getDate("Bestelldatum"),
-                    bestellungDoc.getDouble("Total"),
-                    null); // Placeholder for BestellpositionList
-        }
-        return null;
     }
 
     public List<Bestellung> searchBestellung(String columnName, String searchData) {
@@ -501,16 +484,19 @@ public class CShop_Repository {
     public void updateKundeForBestellung(ObjectId kundeId, Bestellung bestellung) {
         Document kundeDoc = kundeCollection.find(new Document("_id", kundeId)).first();
         if (kundeDoc != null) {
-            String bestellungenString = kundeDoc.getString("Bestellungen");
             List<Integer> bestellungen;
-            if (bestellungenString != null && !bestellungenString.isEmpty()) {
-                // Parse the string to a list of integers
-                bestellungen = parseBestellungenString(bestellungenString);
+            Object bestellungenObj = kundeDoc.get("Bestellungen");
+            if (bestellungenObj instanceof String) {
+                // If Bestellungen is stored as a String, parse it to a list of integers
+                bestellungen = parseBestellungenString((String) bestellungenObj);
+            } else if (bestellungenObj instanceof ArrayList) {
+                // If Bestellungen is stored as an ArrayList, cast it directly
+                bestellungen = (ArrayList<Integer>) bestellungenObj;
             } else {
+                // Handle other cases if needed
                 bestellungen = new ArrayList<>();
             }
-            bestellungen.add(Integer.valueOf(bestellung.getBestellnummer()));
-            // Convert the list of integers to a string with brackets
+            bestellungen.add(bestellung.getBestellnummer());
             String updatedBestellungenString = bestellungen.toString();
             kundeCollection.updateOne(new Document("_id", kundeId), new Document("$set", new Document("Bestellungen", updatedBestellungenString)));
         }
@@ -575,60 +561,6 @@ public class CShop_Repository {
         }
     }
 
-    // Methods for managing Bestellpositionen
-
-    // Add Bestellposition
-    public void addBestellposition(Bestellung bestellung, Bestellposition bestellposition) {
-        // Create a new document for the Bestellposition
-        Document bestellpositionDoc = new Document("Einzelpreis", bestellposition.getEinzelpreis())
-                .append("Anzahl", bestellposition.getAnzahl());
-
-    // Add the Bestellposition object to the list
-        bestellung.getBestellpositionList().add(bestellposition);
-
-
-        // Update the Bestellung document in the collection
-        Document query = new Document("Bestellnummer", bestellung.getBestellnummer());
-        Document update = new Document("$push", new Document("BestellpositionList", bestellpositionDoc));
-        bestellungCollection.updateOne(query, update);
-    }
-
-    // Update Bestellposition
-    public void updateBestellposition(String bestellpositionId, Bestellposition bestellposition) {
-        Document updatedBestellposition = new Document("$set", new Document("Einzelpreis", bestellposition.getEinzelpreis())
-                .append("Anzahl", bestellposition.getAnzahl()));
-        bestellCollection.updateOne(new Document("_id", bestellpositionId), updatedBestellposition);
-    }
-
-    // Delete Bestellposition
-    public void deleteBestellposition(String bestellpositionId) {
-        bestellCollection.deleteOne(new Document("_id", bestellpositionId));
-    }
-
-    // Read Bestellposition
-    public Bestellposition readBestellposition(String bestellpositionId) {
-        Document bestellpositionDoc = bestellCollection.find(new Document("_id", bestellpositionId)).first();
-        if (bestellpositionDoc != null) {
-            return new Bestellposition(
-                    bestellpositionDoc.getObjectId("ArticleId"),
-                    bestellpositionDoc.getInteger("Anzahl"),
-                    bestellpositionDoc.getDouble("Einzelpreis"));
-        }
-        return null;
-    }
-
-    // Read all Bestellpositionen
-    public List<Bestellposition> readAllBestellpositionen() {
-        List<Bestellposition> bestellpositionen = new ArrayList<>();
-        for (Document bestellpositionDoc : bestellungCollection.find()) {
-            ObjectId articleId = bestellpositionDoc.getObjectId("ArticleID");
-            Integer anzahl = bestellpositionDoc.getInteger("Anzahl");
-            Double einzelpreis = bestellpositionDoc.getDouble("Einzelpreis");
-            bestellpositionen.add(new Bestellposition(articleId, anzahl, einzelpreis));
-        }
-        return bestellpositionen;
-    }
-
     // Universal save function
     public static void save() {
         saveCollection(kundeCollection);
@@ -643,16 +575,6 @@ public class CShop_Repository {
             String id = document.getObjectId("_id").toString();
             Document query = new Document("_id", id);
             collection.replaceOne(query, document);
-        }
-    }
-
-    public int getLatestid() {
-        Document latestKundeDoc = kundeCollection.find().sort(new Document("_id", -1)).limit(1).first();
-        if (latestKundeDoc != null) {
-            return latestKundeDoc.getInteger("_id");
-        } else {
-            // If no Kunde exists yet, return 0 or any other default value as per your requirement
-            return 0;
         }
     }
 
