@@ -4,12 +4,14 @@ import M165.Objects.*;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+
 import org.bson.Document;
 import org.bson.types.ObjectId;
 
-import java.util.Date;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+
+import static com.mongodb.client.model.Filters.eq;
+import static com.mongodb.client.model.Projections.include;
 
 public class CShop_Repository {
     private static MongoCollection<Document> kundeCollection = null;
@@ -94,11 +96,39 @@ public class CShop_Repository {
 
     // Delete Kunde
     public void deleteKunde(String id) {
-        kundeCollection.deleteOne(new Document("_id", id));
+        // Retrieve the Kunde document to get its ID
+        Document kundeDocument = kundeCollection.find(new Document("_id", new ObjectId(id))).first();
+        if (kundeDocument != null) {
+            // Extract the Kunde ID
+            ObjectId kundeId = kundeDocument.getObjectId("_id");
+
+            // Delete the Kunde document
+            kundeCollection.deleteOne(new Document("_id", kundeId));
+
+            // Delete associated Bestellung documents
+            bestellungCollection.deleteMany(new Document("Kunde", kundeId));
+
+            System.out.println("Kunde with ID " + kundeId + " and associated Bestellungen deleted successfully.");
+        } else {
+            System.out.println("Kunde not found with ID: " + id);
+        }
+    }
+
+    // Helper method to get Bestellnummern associated with a Kunde ID
+    private List<Integer> getBestellnummernByKundeId(ObjectId kundeId) {
+        List<Integer> bestellnummern = new ArrayList<>();
+        FindIterable<Document> kundeWithBestellungen = kundeCollection.find(eq("_id", kundeId)).projection(include("Bestellungen.Bestellnummer"));
+        for (Document doc : kundeWithBestellungen) {
+            List<Document> bestellungen = doc.getList("Bestellungen", Document.class);
+            for (Document bestellung : bestellungen) {
+                bestellnummern.add(bestellung.getInteger("Bestellnummer"));
+            }
+        }
+        return bestellnummern;
     }
 
     // Read Kunde
-    public Kunde readKunde(String id) {
+    public Kunde searchKunde(String id) {
         Document kundeDoc = kundeCollection.find(new Document("_id", id)).first();
         if (kundeDoc != null) {
             return new Kunde(kundeDoc.getObjectId("Id"),
@@ -134,7 +164,7 @@ public class CShop_Repository {
         }
         return kunden;
     }
-    public List<Kunde> readKunde(String column, String content) {
+    public List<Kunde> searchKunde(String column, String content) {
         List<Kunde> kunden = new ArrayList<>();
         Document query = new Document(column, content);
         for (Document kundeDoc : kundeCollection.find(query)) {
@@ -217,16 +247,34 @@ public class CShop_Repository {
         this.computerCollection.insertOne(computerDoc);
     }
 
-    // Update Computer
     public void updateComputer(ObjectId computerId, Computer computer) {
         Document updatedComputer = new Document("$set", new Document("Hersteller", computer.getHersteller())
                 .append("Modell", computer.getModell())
                 .append("Arbeitspeicher", computer.getArbeitspeicher())
                 .append("CPU", computer.getCPU())
                 .append("Massenspeicher", computer.getMassenspeicher())
-                .append("Typ", computer.getTyp()));
+                .append("Typ", computer.getTyp())
+                .append("Einzelpreis", computer.getEinzelpreis()));
+
+        // If Schnittstellen are provided, update them as well
+        List<Schnittstellentyp> schnittstellen = computer.getSchnittstellen();
+        if (schnittstellen != null && !schnittstellen.isEmpty()) {
+            List<Document> schnittstellenDocuments = new ArrayList<>();
+            for (Schnittstellentyp schnittstellentyp : schnittstellen) {
+                Document schnittstellenDocument = new Document()
+                        .append("Typ", schnittstellentyp.getName())
+                        .append("Amount of Slots", schnittstellentyp.getInteger());
+                schnittstellenDocuments.add(schnittstellenDocument);
+            }
+            // Append the new Schnittstellen array to the updatedComputer document
+            updatedComputer.append("$set", new Document("Schnittstellen", schnittstellenDocuments));
+        }
+
+        // Update the computer document
         this.computerCollection.updateOne(new Document("_id", computerId), updatedComputer);
     }
+
+
 
     // Delete Computer
     public void deleteComputer(ObjectId computerId) {
@@ -517,7 +565,7 @@ public class CShop_Repository {
 
     public void deleteBestellnummerFromKunde(ObjectId kundeId, int bestellnummer) {
         // Retrieve the Kunde object associated with the provided ID
-        Kunde kunde = readKunde(String.valueOf(kundeId));
+        Kunde kunde = searchKunde(String.valueOf(kundeId));
 
         // Check if the Kunde exists
         if (kunde != null) {
@@ -577,6 +625,6 @@ public class CShop_Repository {
             collection.replaceOne(query, document);
         }
     }
-
 }
+
 

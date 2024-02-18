@@ -10,6 +10,7 @@ import org.bson.Document;
 import org.bson.types.ObjectId;
 
 import java.util.ArrayList;
+import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
 
@@ -83,8 +84,8 @@ public class ComputerFunctions {
 
             // Prompt the user to input the updated details for the selected Computer
             System.out.println("Enter the updated details for the Computer:");
-            System.out.println("Format: Hersteller, Modell, Arbeitspeicher, CPU, Massenspeicher, Typ");
-            System.out.println("Example input: Dell, Inspiron, 8, Intel Core i5, 512, Laptop");
+            System.out.println("Format: Hersteller, Modell, Arbeitspeicher, CPU, Massenspeicher, Typ, Einzelpreis");
+            System.out.println("Example input: Dell, Inspiron, 8, Intel Core i5, 512, Laptop, 599.99");
             String input = scanner.nextLine();
             String[] details = input.split(", ");
 
@@ -98,52 +99,60 @@ public class ComputerFunctions {
             Double einzelpreis = Double.valueOf(details[6]);
 
             // Create a new Computer object with the updated details
-            Computer updatedComputer = new Computer(selectedComputer.getId(repository), hersteller, modell, arbeitspeicher, cpu, massenspeicher, typ, null, einzelpreis); // Assuming Schnittstellentyp is not provided in user input
+            Computer updatedComputer = new Computer(selectedComputer.getId(repository), hersteller, modell, arbeitspeicher, cpu, massenspeicher, typ, null, einzelpreis);
 
-            // Call the updateComputer method from the repository to apply the changes
-            repository.updateComputer(selectedComputer.getId(repository), updatedComputer);
-            System.out.println("Computer updated successfully.");
+            // Create a new list to store updated Schnittstellentyp objects
+            List<Schnittstellentyp> updatedSchnittstellen = new ArrayList<>();
+
+            // Display the current Schnittstellentyps and number of slots
+            System.out.println("Current Schnittstellentyps:");
+            List<Schnittstellentyp> schnittstellentypList = selectedComputer.getSchnittstellen();
+            if (schnittstellentypList != null && !schnittstellentypList.isEmpty()) {
+                for (int i = 0; i < schnittstellentypList.size(); i++) {
+                    Schnittstellentyp currentSchnittstellentyp = schnittstellentypList.get(i);
+                    System.out.println((i + 1) + ". " + currentSchnittstellentyp.getName() + ": Slots - " + currentSchnittstellentyp.getInteger());
+                }
+            } else {
+                System.out.println("No Schnittstellentyps found for this Computer.");
+            }
 
             // Prompt the user to update Schnittstellentyp if desired
-            System.out.println("Do you want to update the Schnittstellentyp? (yes/no)");
+            System.out.println("Do you want to update any Schnittstellentyp? (yes/no)");
             String updateSchnittstellentyp = scanner.nextLine();
             if (updateSchnittstellentyp.equalsIgnoreCase("yes")) {
-                List<Schnittstellentyp> schnittstellentypList = selectedComputer.getSchnittstellen();
                 if (schnittstellentypList != null && !schnittstellentypList.isEmpty()) {
-                    System.out.println("Schnittstellentyps:");
-                    for (int i = 0; i < schnittstellentypList.size(); i++) {
-                        System.out.println((i + 1) + ". " + schnittstellentypList.get(i).getName());
-                    }
-
-                    while (true) {
-                        System.out.println("Enter the number of the Schnittstellentyp you want to update (or enter 0 to finish):");
-                        int schnittstellentypChoice = scanner.nextInt();
+                    for (Schnittstellentyp schnittstellentyp : schnittstellentypList) {
+                        System.out.println("Updating Schnittstellentyp: " + schnittstellentyp.getName());
+                        System.out.println("Enter the updated type for the Schnittstellentyp:");
+                        String updatedName = scanner.nextLine();
+                        System.out.println("Enter the updated number of slots for the Schnittstellentyp:");
+                        int updatedSlots = scanner.nextInt();
                         scanner.nextLine(); // Consume newline
-                        if (schnittstellentypChoice == 0) {
-                            break;
-                        }
-                        if (schnittstellentypChoice >= 1 && schnittstellentypChoice <= schnittstellentypList.size()) {
-                            System.out.println("Enter the updated type for the Schnittstellentyp:");
-                            String updatedName = scanner.nextLine();
-                            schnittstellentypList.get(schnittstellentypChoice - 1).setName(updatedName);
-                            System.out.println("Schnittstellentyp updated successfully.");
-                        } else {
-                            System.out.println("Invalid choice. Please enter a number within the range.");
-                        }
+                        Schnittstellentyp updatedSchnittstellentyp = new Schnittstellentyp(updatedName, updatedSlots);
+                        updatedSchnittstellen.add(updatedSchnittstellentyp);
                     }
-
-                    // Update the computer with the modified Schnittstellentyp list
-                    updatedComputer.setSchnittstellen(schnittstellentypList);
-                    repository.updateComputer(selectedComputer.getId(repository), updatedComputer);
-                    System.out.println("Computer updated with modified Schnittstellentyp list.");
                 } else {
                     System.out.println("No Schnittstellentyps found for this Computer.");
                 }
+            } else {
+                // If the user chooses not to update Schnittstellentyp, copy the existing ones
+                if (schnittstellentypList != null && !schnittstellentypList.isEmpty()) {
+                    updatedSchnittstellen.addAll(schnittstellentypList);
+                }
             }
+
+            // Update the Computer object with the modified Schnittstellentyp list
+            updatedComputer.setSchnittstellen(updatedSchnittstellen);
+
+            // Update the Computer in the repository with the modified data
+            repository.updateComputer(selectedComputer.getId(repository), updatedComputer);
+            System.out.println("Computer updated successfully.");
         } else {
             System.out.println("Invalid choice. Please enter a number within the range.");
         }
     }
+
+
 
     public static void computerDelete(CShop_Repository repository, Scanner scanner) {
         // Retrieve all existing Computers

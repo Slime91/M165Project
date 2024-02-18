@@ -137,7 +137,6 @@ public class KundeFunctions {
 
             // Delete the Kunde with the specified ID
             repository.deleteKunde(selectedKunde.getId(repository).toString());
-            System.out.println("Kunde with ID " + selectedKunde.getId(repository) + " deleted successfully.");
         } else {
             System.out.println("Invalid choice. Please enter a number within the range.");
         }
@@ -169,7 +168,7 @@ public class KundeFunctions {
         String content = scanner.nextLine();
 
         // Retrieve Kunden matching the search criteria
-        List<Kunde> kunden = repository.readKunde(column, content);
+        List<Kunde> kunden = repository.searchKunde(column, content);
 
         // Display the search results
         if (!kunden.isEmpty()) {
