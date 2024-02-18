@@ -60,6 +60,7 @@ public class ComputerFunctions {
         return computer;
     }
 
+    // Update a Computer and their Schnittstellen
     public static void updateComputer(CShop_Repository repository, Scanner scanner) {
         // Retrieve all existing Computers
         List<Computer> computers = repository.readAllComputers();
@@ -178,10 +179,15 @@ public class ComputerFunctions {
             // Delete the Computer with the specified ID
             repository.deleteComputer(selectedComputer.getId(repository));
             System.out.println("Computer with ID " + selectedComputer.getId(repository) + " deleted successfully.");
+
+            // Delete corresponding Bestellpositions
+            repository.deleteBestellpositions(selectedComputer.getId(repository));
+            System.out.println("Corresponding Bestellpositions deleted successfully.");
         } else {
             System.out.println("Invalid choice. Please enter a number within the range.");
         }
     }
+
 
     // Function to read all data from the "computer" collection
     public static void readAllComputerData(CShop_Repository repository) {
@@ -208,15 +214,19 @@ public class ComputerFunctions {
         String content = scanner.nextLine();
 
         // Retrieve Computers matching the search criteria
-        Computer computer = repository.readComputer(column, content);
+        List<Computer> matchingComputers = repository.searchComputer(column, content);
 
         // Display the search result
-        if (computer != null) {
-            System.out.println("Search result:");
-            ObjectId computerId = computer.getId(repository);
-            System.out.println(computerId + ": " + computer.getModell() + ", " + computer.getHersteller());
+        if (!matchingComputers.isEmpty()) {
+            System.out.println("Search results:");
+            for (int i = 0; i < matchingComputers.size(); i++) {
+                Computer computer = matchingComputers.get(i);
+                ObjectId computerId = computer.getId(repository);
+                System.out.println((i + 1) + ". " + computerId + ": " + computer.getModell() + ", " + computer.getHersteller());
+            }
         } else {
-            System.out.println("No Computer found matching the search criteria.");
+            System.out.println("No Computers found matching the search criteria.");
         }
     }
+
 }

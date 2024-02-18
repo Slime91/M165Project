@@ -1,5 +1,6 @@
 package M165;
 
+import M165.Functions.BestellungFunctions;
 import M165.Objects.*;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
@@ -9,6 +10,7 @@ import org.bson.Document;
 import org.bson.types.ObjectId;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Projections.include;
@@ -282,16 +284,18 @@ public class CShop_Repository {
     }
 
     // Search Computer
-
-
-    public static Computer readComputer(String column, String content) {
-        // Create a query document to find the computer based on the specified column and content
+    public List<Computer> searchComputer(String column, String content) {
+        // Create a query document to find the computers based on the specified column and content
         Document query = new Document(column, content);
 
-        // Find the computer document based on the query
-        Document computerDoc = computerCollection.find(query).first();
+        // Find the computer documents based on the query
+        FindIterable<Document> computerDocs = computerCollection.find(query);
 
-        if (computerDoc != null) {
+        // Create a list to store the matching computers
+        List<Computer> matchingComputers = new ArrayList<>();
+
+        // Iterate over the computer documents and convert them to Computer objects
+        for (Document computerDoc : computerDocs) {
             List<Schnittstellentyp> schnittstellentypList = new ArrayList<>();
             List<Document> schnittstellenDocs = computerDoc.getList("schnittstellen", Document.class);
             if (schnittstellenDocs != null) {
@@ -311,9 +315,12 @@ public class CShop_Repository {
             String typ = computerDoc.getString("Typ");
             Double einzelpreis = computerDoc.getDouble("Einzelpreis");
 
-            return new Computer(id, hersteller, modell, arbeitspeicher, cpu, massenspeicher, typ, schnittstellentypList, einzelpreis);
+            // Create a Computer object and add it to the list
+            Computer computer = new Computer(id, hersteller, modell, arbeitspeicher, cpu, massenspeicher, typ, schnittstellentypList, einzelpreis);
+            matchingComputers.add(computer);
         }
-        return null;
+
+        return matchingComputers;
     }
 
     // Read all Computers
@@ -344,51 +351,6 @@ public class CShop_Repository {
         return computers;
     }
 
-    // Methods for managing Adressen
-
-    // Add Adresse
-    public void addAdresse(Adresse adresse) {
-        Document adresseDoc = new Document("Strasse", adresse.getStrasse())
-                .append("Postleitzahl", adresse.getPostleitzahl())
-                .append("Ort", adresse.getOrt());
-        this.adresseCollection.insertOne(adresseDoc);
-    }
-
-    // Update Adresse
-    public void updateAdresse(String adresseId, Adresse adresse) {
-        Document updatedAdresse = new Document("$set", new Document("Strasse", adresse.getStrasse())
-                .append("Postleitzahl", adresse.getPostleitzahl())
-                .append("Ort", adresse.getOrt()));
-        this.adresseCollection.updateOne(new Document("_id", adresseId), updatedAdresse);
-    }
-
-    // Delete Adresse
-    public void deleteAdresse(String adresseId) {
-        adresseCollection.deleteOne(new Document("_id", adresseId));
-    }
-
-    // Read Adresse
-    public Adresse readAdresse(String adresseId) {
-        Document adresseDoc = adresseCollection.find(new Document("_id", adresseId)).first();
-        if (adresseDoc != null) {
-            return new Adresse(adresseDoc.getString("Strasse"),
-                    adresseDoc.getInteger("Postleitzahl"),
-                    adresseDoc.getString("Ort"));
-        }
-        return null;
-    }
-
-    // Read all Adressen
-    public List<Adresse> readAllAdressen() {
-        List<Adresse> adressen = new ArrayList<>();
-        for (Document adresseDoc : adresseCollection.find()) {
-            adressen.add(new Adresse(adresseDoc.getString("Strasse"),
-                    adresseDoc.getInteger("Postleitzahl"),
-                    adresseDoc.getString("Ort")));
-        }
-        return adressen;
-    }
-
     // Methods for managing Bestellungen
 
     // Add Bestellung
@@ -402,7 +364,7 @@ public class CShop_Repository {
         // Convert BestellpositionList to a list of documents and embed it into the Bestellung document
         List<Document> bestellpositionDocs = new ArrayList<>();
         for (Bestellposition bestellposition : bestellung.getBestellpositionList()) {
-            Document bestellpositionDoc = new Document("articleId", bestellposition.getArticleId()) // Include articleId
+            Document bestellpositionDoc = new Document("Artikel ID", bestellposition.getArticleId()) // Include Artikel ID
                     .append("Einzelpreis", bestellposition.getEinzelpreis())
                     .append("Anzahl", bestellposition.getAnzahl());
             bestellpositionDocs.add(bestellpositionDoc);
@@ -416,13 +378,37 @@ public class CShop_Repository {
 
 
     // Update Bestellung
-    public void updateBestellung(String bestellungId, Bestellung bestellung, CShop_Repository repository) {
-        Document updatedBestellung = new Document("$set", new Document("Bestellnummer", bestellung.getBestellnummer())
-                .append("Kunde", bestellung.getKundeId()) // Assuming Kunde ID is stored directly
-                .append("Bestelldatum", bestellung.getBestelldatum())
-                .append("Total", bestellung.getTotal()));
-        this.bestellungCollection.updateOne(new Document("_id", bestellungId), updatedBestellung);
+    public void updateBestellung(String bestellungId, Bestellung bestellung) {
+        // Retrieve the Bestellung document from the database using the provided bestellungId
+        Document retrievedBestellungDoc = bestellungCollection.find(new Document("_id", bestellungId)).first();
+
+        // Check if the retrievedBestellungDoc is not null
+        if (retrievedBestellungDoc != null) {
+            // Convert the retrievedBestellungDoc to a Bestellung object
+            Bestellung retrievedBestellung = documentToBestellung(retrievedBestellungDoc);
+
+            // Update the BestellpositionList in the retrieved Bestellung with the one from the parameter
+            retrievedBestellung.setBestellpositionList(bestellung.getBestellpositionList());
+
+            // Calculate the updated total based on the modified Bestellung
+            double updatedTotal = BestellungFunctions.calculateTotal(bestellung.getBestellpositionList());
+
+            // Create a document with updated Bestellung details
+            Document updatedBestellung = new Document("$set", new Document("Bestellnummer", bestellung.getBestellnummer())
+                    .append("Kunde", bestellung.getKundeId()) // Assuming Kunde ID is stored directly
+                    .append("Bestelldatum", bestellung.getBestelldatum())
+                    .append("Total", updatedTotal));
+
+            // Update the Bestellung document in the database
+            bestellungCollection.updateOne(new Document("_id", bestellungId), updatedBestellung);
+        } else {
+            System.out.println("Bestellung not found in the database.");
+        }
     }
+
+
+
+
 
     // Delete Bestellung
     public void deleteBestellung(String bestellungId) {
@@ -444,9 +430,31 @@ public class CShop_Repository {
     }
 
     private Bestellung documentToBestellung(Document doc) {
-        // Convert Document to Bestellung object (implement this method based on your existing code)
-        return null;
+        // Retrieve fields from the document
+        Integer bestellnummer = doc.getInteger("Bestellnummer");
+        ObjectId kundeId = doc.getObjectId("Kunde");
+        Date bestelldatum = doc.getDate("Bestelldatum");
+        Double total = doc.getDouble("Total");
+
+        // Retrieve the list of Bestellposition documents associated with the Bestellung
+        List<Document> bestellpositionDocs = (List<Document>) doc.get("BestellpositionList");
+        List<Bestellposition> bestellpositionList = new ArrayList<>();
+
+        if (bestellpositionDocs != null) {
+            // Iterate over the Bestellposition documents and construct Bestellposition objects
+            for (Document bpDoc : bestellpositionDocs) {
+                ObjectId articleId = bpDoc.getObjectId("Artikel ID");
+                Integer anzahl = bpDoc.getInteger("Anzahl");
+                Double einzelpreis = bpDoc.getDouble("Einzelpreis");
+                Bestellposition bestellposition = new Bestellposition(articleId, anzahl, einzelpreis);
+                bestellpositionList.add(bestellposition);
+            }
+        }
+
+        // Create and return the Bestellung object
+        return new Bestellung(bestellnummer, kundeId, bestelldatum, total, bestellpositionList);
     }
+
 
     private boolean bestellungMatchesSearchCriteria(Bestellung bestellung, String columnName, String searchData) {
         switch (columnName.toLowerCase()) {
@@ -461,14 +469,16 @@ public class CShop_Repository {
         }
     }
 
-    public List<Bestellung> readAllBestellungen(CShop_Repository repository) {
+    // In CShop_Repository.java
+    // In CShop_Repository.java
+    public List<Bestellung> readAllBestellungen() {
         List<Bestellung> bestellungen = new ArrayList<>();
         for (Document bestellungDoc : bestellungCollection.find()) {
             Integer bestellnummer = bestellungDoc.getInteger("Bestellnummer"); // Get the Bestellnummer from the document
 
             // Assuming "Bestellnummer" is the field name for Bestellung Bestellnummer
             if (bestellnummer != null) {
-                List<Bestellposition> bestellpositionList = repository.readBestellpositionenOfBestellung(bestellnummer); // Fetch Bestellpositionen based on Bestellnummer
+                List<Bestellposition> bestellpositionList = readBestellpositionenOfBestellung(bestellnummer); // Fetch Bestellpositionen based on Bestellnummer
                 ObjectId kundeId = bestellungDoc.getObjectId("Kunde"); // Assuming "KundeId" is the field name for Kunde ObjectId
                 Bestellung bestellung = new Bestellung(
                         bestellnummer,
@@ -488,6 +498,7 @@ public class CShop_Repository {
 
 
 
+
     public List<Bestellposition> readBestellpositionenOfBestellung(Integer bestellnummer) {
         List<Bestellposition> bestellpositionList = new ArrayList<>();
 
@@ -501,9 +512,9 @@ public class CShop_Repository {
             if (bestellpositionDocs != null) {
                 // Iterate over the Bestellposition documents and construct Bestellposition objects
                 for (Document bestellpositionDoc : bestellpositionDocs) {
-                    ObjectId articleId = bestellpositionDoc.getObjectId("articleId");
-                    Integer anzahl = bestellpositionDoc.getInteger("Anzahl"); // Corrected field name
-                    Double einzelpreis = bestellpositionDoc.getDouble("Einzelpreis"); // Corrected field name
+                    ObjectId articleId = bestellpositionDoc.getObjectId("Artikel ID");
+                    Integer anzahl = bestellpositionDoc.getInteger("Anzahl");
+                    Double einzelpreis = bestellpositionDoc.getDouble("Einzelpreis");
                     Bestellposition bestellposition = new Bestellposition(articleId, anzahl, einzelpreis);
                     bestellpositionList.add(bestellposition);
                 }
@@ -513,6 +524,17 @@ public class CShop_Repository {
         return bestellpositionList;
     }
 
+    // Delete Bestellpositions associated with a deleted Computer
+    public void deleteBestellpositions(ObjectId computerId) {
+        // Query to find Bestellpositions containing the specified computerId in their Bestellung
+        Document query = new Document("BestellpositionList.Artikel ID", computerId);
+
+        // Update to remove the matching Bestellpositions
+        Document update = new Document("$pull", new Document("BestellpositionList", new Document("Artikel ID", computerId)));
+
+        // Update all matching documents
+        bestellungCollection.updateMany(query, update);
+    }
 
 
 
@@ -582,7 +604,7 @@ public class CShop_Repository {
 
     private void updateBestellungenForKunde(ObjectId kundeId, List<Bestellung> bestellungen) {
         // Convert the list of integers to a string with brackets
-        String updatedBestellungenString = bestellungen.toString();
+        String updatedBestellungenString = bestellungen.stream().map(String::valueOf).collect(Collectors.joining(", "));
 
         // Update the Kunde document in the database with the modified list of Bestellungen
         kundeCollection.updateOne(new Document("_id", kundeId), new Document("$set", new Document("Bestellungen", updatedBestellungenString)));

@@ -133,7 +133,7 @@ public class BestellungFunctions {
     }
 
 
-    private static double calculateTotal(List<Bestellposition> bestellpositionen) {
+    public static double calculateTotal(List<Bestellposition> bestellpositionen) {
         double total = 0.0;
         for (Bestellposition bestellposition : bestellpositionen) {
             total += bestellposition.getEinzelpreis() * bestellposition.getAnzahl();
@@ -141,27 +141,9 @@ public class BestellungFunctions {
         return total;
     }
 
-    private static Kunde chooseKundeForBestellung(Scanner scanner, CShop_Repository repository) {
-        List<Kunde> kunden = repository.readAllKunden();
-        System.out.println("Choose a Kunde for this Bestellung:");
-        for (int i = 0; i < kunden.size(); i++) {
-            System.out.println((i + 1) + ". " + kunden.get(i).getVorname() + " " + kunden.get(i).getNachname());
-        }
-
-        int choice = scanner.nextInt();
-        scanner.nextLine(); // Consume newline
-
-        if (choice >= 1 && choice <= kunden.size()) {
-            return kunden.get(choice - 1);
-        } else {
-            System.out.println("Invalid choice.");
-            return null;
-        }
-    }
-
     public static void updateBestellung(CShop_Repository repository, Scanner scanner) {
         // Retrieve all existing Bestellungen
-        List<Bestellung> bestellungen = repository.readAllBestellungen(repository);
+        List<Bestellung> bestellungen = repository.readAllBestellungen();
 
         // Display the list of Bestellungen with their details
         System.out.println("Existing Bestellungen:");
@@ -181,19 +163,85 @@ public class BestellungFunctions {
             // Retrieve the selected Bestellung
             Bestellung selectedBestellung = bestellungen.get(choice - 1);
 
-            // Prompt the user to input the updated details for the selected Bestellung
-            System.out.println("Enter the updated details for the Bestellung:");
-            // Implement the update process based on your requirements
+            // Retrieve Bestellpositions for the selected Bestellung using the repository method
+            List<Bestellposition> bestellpositions = repository.readBestellpositionenOfBestellung(selectedBestellung.getBestellnummer());
 
-            System.out.println("Bestellung updated successfully.");
+            // Display Bestellpositions for the selected Bestellung
+            System.out.println("Bestellpositions:");
+            for (int i = 0; i < bestellpositions.size(); i++) {
+                Bestellposition position = bestellpositions.get(i);
+                System.out.println((i + 1) + ". Artikel ID: " + position.getArticleId() + ", Einzelpreis: " + position.getEinzelpreis() + ", Anzahl: " + position.getAnzahl());
+            }
+
+            // Prompt the user to select the Bestellposition they want to update
+            System.out.println("Enter the number of the Bestellposition you want to update:");
+            int positionChoice = scanner.nextInt();
+            scanner.nextLine(); // Consume newline
+
+            // Ensure the user entered a valid choice
+            if (positionChoice >= 1 && positionChoice <= bestellpositions.size()) {
+                // Retrieve the selected Bestellposition
+                Bestellposition selectedPosition = bestellpositions.get(positionChoice - 1);
+
+                // Retrieve all computers and display them for the user to choose
+                List<Computer> computers = repository.readAllComputers();
+                System.out.println("Available Computers:");
+                for (int i = 0; i < computers.size(); i++) {
+                    Computer computer = computers.get(i);
+                    System.out.println((i + 1) + ". " + computer.getHersteller() + ", " + computer.getModell() + ", Preis: " + computer.getEinzelpreis());
+                }
+
+                // Prompt the user to choose a computer
+                System.out.println("Choose a computer by entering its number:");
+                int computerChoice = scanner.nextInt();
+                scanner.nextLine(); // Consume newline
+
+                // Ensure the user entered a valid choice
+                if (computerChoice >= 1 && computerChoice <= computers.size()) {
+                    // Retrieve the selected computer
+                    Computer selectedComputer = computers.get(computerChoice - 1);
+
+                    // Update the selected position with the new article ID (computer ID) and Einzelpreis (computer price)
+                    selectedPosition.setArticleId(selectedComputer.getComputerId());
+                    selectedPosition.setEinzelpreis(selectedComputer.getEinzelpreis());
+
+                    // Prompt the user to input the new Anzahl
+                    System.out.println("Enter the new Anzahl:");
+                    int newAnzahl = scanner.nextInt();
+                    scanner.nextLine(); // Consume newline
+
+                    // Update the Anzahl of the selected position
+                    selectedPosition.setAnzahl(newAnzahl);
+
+                    // Update the selected Bestellposition in the Bestellung
+                    selectedBestellung.getBestellpositionList().set(positionChoice - 1, selectedPosition);
+
+                    // Calculate the updated total based on the modified Bestellung
+                    double updatedTotal = calculateTotal(selectedBestellung.getBestellpositionList());
+                    selectedBestellung.setTotal(updatedTotal);
+
+                    // Update the Bestellung in the repository
+                    repository.updateBestellung(String.valueOf(selectedBestellung.getBestellnummer()), selectedBestellung);
+
+                    System.out.println("Bestellposition updated successfully.");
+                } else {
+                    System.out.println("Invalid choice for computer. Please enter a number within the range.");
+                }
+            } else {
+                System.out.println("Invalid choice for Bestellposition. Please enter a number within the range.");
+            }
         } else {
-            System.out.println("Invalid choice. Please enter a number within the range.");
+            System.out.println("Invalid choice for Bestellung. Please enter a number within the range.");
         }
     }
 
+
+
+
+
     public static void deleteBestellung(CShop_Repository repository, Scanner scanner) {
         // Retrieve all existing Bestellungen
-        List<Bestellung> bestellungen = repository.readAllBestellungen(repository);
+        List<Bestellung> bestellungen = repository.readAllBestellungen();
 
         // Display the list of Bestellungen with their details
         System.out.println("Existing Bestellungen:");
@@ -244,7 +292,7 @@ public class BestellungFunctions {
     }
 
     public static void readAllBestellung(CShop_Repository repository) {
-        List<Bestellung> allBestellungen = repository.readAllBestellungen(repository);
+        List<Bestellung> allBestellungen = repository.readAllBestellungen();
         System.out.println("All Bestellungen:");
         for (Bestellung bestellung : allBestellungen) {
             System.out.println(bestellung);
@@ -252,7 +300,7 @@ public class BestellungFunctions {
     }
 
     public static void viewBestellposition(CShop_Repository repository, Scanner scanner) {
-        List<Bestellung> allBestellungen = repository.readAllBestellungen(repository);
+        List<Bestellung> allBestellungen = repository.readAllBestellungen();
 
         if (!allBestellungen.isEmpty()) {
             System.out.println("Available Bestellungen:");
@@ -290,7 +338,3 @@ public class BestellungFunctions {
         }
     }
 }
-
-
-
-
